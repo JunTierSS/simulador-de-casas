@@ -323,11 +323,22 @@ for idx, esc_id in enumerate(st.session_state.escenarios):
                                         min_value=0.0, max_value=500.0, step=0.5,
                                         key=f"{prefix}_arriendo")
 
-        # --- Valor futuro ---
-        with st.expander(f"Valor futuro - {nombre}"):
+            tasa_inc_arriendo = st.number_input(
+                "Reajuste anual del arriendo (%)", value=3.0,
+                min_value=0.0, max_value=20.0, step=0.5, key=f"{prefix}_inc_arr",
+                help="Cuanto sube el arriendo cada año. Referencia: IPC historico ~3-4%"
+            )
+
+        # --- Valor futuro y reajuste de gastos ---
+        with st.expander(f"Valor futuro y reajustes - {nombre}"):
             tasa_aprec = st.number_input("Tasa apreciacion anual (%)", value=3.0,
                                           min_value=-10.0, max_value=30.0, step=0.5,
                                           key=f"{prefix}_aprec")
+            tasa_inc_gastos = st.number_input(
+                "Reajuste anual de gastos (%)", value=3.0,
+                min_value=0.0, max_value=20.0, step=0.5, key=f"{prefix}_inc_gastos",
+                help="Cuanto suben los gastos comunes y contribuciones cada año (gastos comunes, contribuciones). Referencia: IPC ~3%"
+            )
 
         inputs_escenarios.append({
             "nombre": nombre,
@@ -347,7 +358,9 @@ for idx, esc_id in enumerate(st.session_state.escenarios):
             "seg_incendio": seg_incendio,
             "gastos": gastos,
             "arriendo": arriendo,
+            "tasa_inc_arriendo": tasa_inc_arriendo,
             "tasa_aprec": tasa_aprec,
+            "tasa_inc_gastos": tasa_inc_gastos,
             "es_nueva": es_nueva,
             "iva_exento": iva_exento,
             "vacancia": vacancia,
@@ -385,6 +398,8 @@ for inp in inputs_escenarios:
         vacancia_meses=inp["vacancia"],
         num_propiedades_dfl2=inp["num_dfl2"],
         porcentaje_renta=porcentaje_renta,
+        tasa_incremento_arriendo=inp["tasa_inc_arriendo"],
+        tasa_incremento_gastos=inp["tasa_inc_gastos"],
     )
     if r:
         resumenes.append(r)

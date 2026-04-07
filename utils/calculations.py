@@ -124,35 +124,39 @@ def calcular_valor_futuro(precio_actual_uf, tasa_apreciacion_anual, anos):
 
 def calcular_flujo_arriendo(arriendo_mensual_uf, tabla_amortizacion,
                              gastos_comunes_uf=0, contribuciones_trim_uf=0,
-                             tasa_incremento_arriendo=3.0):
+                             tasa_incremento_arriendo=3.0, tasa_incremento_gastos=3.0):
     """
     Calcula flujo de caja neto mensual: arriendo - dividendo - gastos.
-    Incluye incremento anual del arriendo.
+    Incluye incremento anual del arriendo y de los gastos.
     """
     if tabla_amortizacion.empty:
         return pd.DataFrame()
 
-    contribucion_mensual = contribuciones_trim_uf / 3
+    contribucion_mensual_base = contribuciones_trim_uf / 3
     flujos = []
     arriendo_actual = arriendo_mensual_uf
+    gastos_actuales = gastos_comunes_uf
+    contribucion_actual = contribucion_mensual_base
 
     for _, fila in tabla_amortizacion.iterrows():
         mes = fila["mes"]
         ano = fila["ano"]
 
-        # Incrementar arriendo cada 12 meses
+        # Incrementar arriendo y gastos cada 12 meses
         if mes > 1 and (mes - 1) % 12 == 0:
             arriendo_actual *= (1 + tasa_incremento_arriendo / 100)
+            gastos_actuales *= (1 + tasa_incremento_gastos / 100)
+            contribucion_actual *= (1 + tasa_incremento_gastos / 100)
 
-        flujo_neto = arriendo_actual - fila["cuota_total"] - gastos_comunes_uf - contribucion_mensual
+        flujo_neto = arriendo_actual - fila["cuota_total"] - gastos_actuales - contribucion_actual
 
         flujos.append({
             "mes": mes,
             "ano": ano,
             "arriendo": round(arriendo_actual, 4),
             "dividendo": round(fila["cuota_total"], 4),
-            "gastos_comunes": gastos_comunes_uf,
-            "contribuciones": round(contribucion_mensual, 4),
+            "gastos_comunes": round(gastos_actuales, 4),
+            "contribuciones": round(contribucion_actual, 4),
             "flujo_neto": round(flujo_neto, 4),
         })
 
@@ -317,7 +321,8 @@ def calcular_resumen_escenario(precio_uf, pie_pct, bono_uf, tasa_anual, plazo_an
                                  subsidio_dividendo=False, fogaes=False, ds1_tramo=None,
                                  metros_cuadrados=60, es_nueva=True, iva_exento=False,
                                  vacancia_meses=1, num_propiedades_dfl2=0,
-                                 porcentaje_renta=25):
+                                 porcentaje_renta=25,
+                                 tasa_incremento_arriendo=3.0, tasa_incremento_gastos=3.0):
     """Calcula resumen completo de un escenario."""
 
     # Ajustar tasa si tiene subsidio al dividendo
@@ -373,7 +378,8 @@ def calcular_resumen_escenario(precio_uf, pie_pct, bono_uf, tasa_anual, plazo_an
     # Flujo arriendo (considerando vacancia)
     arriendo_con_vacancia = arriendo_uf * (12 - vacancia_meses) / 12
     flujo_arriendo = calcular_flujo_arriendo(
-        arriendo_con_vacancia, tabla, gastos_comunes_uf, contribuciones_trim_uf
+        arriendo_con_vacancia, tabla, gastos_comunes_uf, contribuciones_trim_uf,
+        tasa_incremento_arriendo, tasa_incremento_gastos,
     )
 
     # Costo total real
